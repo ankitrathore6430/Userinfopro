@@ -18,8 +18,6 @@ def send_welcome(message):
 def get_user_info(message):
     bot.reply_to(message, "❌ Telegram does not allow bots to access another user's info using @username directly unless they message the bot first.")
 
-@bot.message_handler(func=lambda message: True)
-def fallback(message):
     bot.reply_to(message, "Send /start to get your own user info.")
 
 
@@ -99,3 +97,12 @@ def stop_auto_message(message):
 
 
 bot.infinity_polling()
+
+
+@bot.message_handler(commands=['ping'])
+def ping(message):
+    bot.reply_to(message, "✅ Bot is running!")
+
+@bot.message_handler(func=lambda message: True)
+def fallback(message):
+    bot.reply_to(message, "Send /start to get your own user info.")
