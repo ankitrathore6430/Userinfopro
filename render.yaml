@@ -1,0 +1,14 @@
+
+services:
+  - type: web
+    name: telegram-user-info-bot
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: python main.py
+    envVars:
+      - key: BOT_TOKEN
+        value: 7618558615:AAFO5kgrM5ru_Unp-ESwchCerQFE9eDisQk
+      - key: ADMIN_ID
+        value: "745211839"
+    plan: free
+    autoDeploy: true
