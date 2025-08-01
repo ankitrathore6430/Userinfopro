@@ -1,9 +1,11 @@
-
 import telebot
 import os
+from flask import Flask
+import threading
 
-BOT_TOKEN = '7618558615:AAFO5kgrM5ru_Unp-ESwchCerQFE9eDisQk'
-ADMIN_ID = 745211839  # User-provided admin ID
+# Load the bot token from environment variable for safety
+BOT_TOKEN = os.getenv("BOT_TOKEN", "7618558615:AAFO5kgrM5ru_Unp-ESwchCerQFE9eDisQk")
+ADMIN_ID = 745211839
 USER_IDS_FILE = 'user_ids.txt'
 bot = telebot.TeleBot(BOT_TOKEN)
 
@@ -18,7 +20,7 @@ def load_user_ids():
                     user_name = parts[1] if len(parts) > 1 else "N/A"
                     user_data[user_id] = user_name
                 except ValueError:
-                    continue # Skip malformed lines
+                    continue
     return user_data
 
 def save_user_id(user_id, username=None, first_name=None, last_name=None):
@@ -30,13 +32,11 @@ def save_user_id(user_id, username=None, first_name=None, last_name=None):
         display_name = first_name
         if last_name:
             display_name += f" {last_name}"
-    
     user_data[user_id] = display_name
 
     with open(USER_IDS_FILE, 'w') as f:
         for uid, name in user_data.items():
             f.write(f"{uid},{name}\n")
-
 
 @bot.message_handler(commands=['start'])
 def send_welcome(message):
@@ -63,7 +63,7 @@ def broadcast_message(message):
     user_data = load_user_ids()
     for user_id in user_data.keys():
         try:
-            if user_id != ADMIN_ID: # Don't send broadcast to admin itself
+            if user_id != ADMIN_ID:
                 bot.send_message(user_id, text_to_broadcast)
         except Exception as e:
             print(f"Could not send message to {user_id}: {e}")
@@ -92,6 +92,20 @@ def get_user_info(message):
 def fallback(message):
     bot.reply_to(message, "Send /start to get your own user info.")
 
-bot.infinity_polling()
+# ---- Flask server for Render + UptimeRobot ----
+app = Flask(__name__)
 
+@app.route('/')
+def home():
+    return "✅ Bot is running!"
 
+def run_flask():
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
+
+def run_bot():
+    bot.infinity_polling()
+
+if __name__ == "__main__":
+    threading.Thread(target=run_flask).start()
+    run_bot()
