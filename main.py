@@ -2,7 +2,7 @@
 import telebot
 import os
 
-BOT_TOKEN = '7618558615:AAFO5kgrM5ru_Unp-ESwchCerQFE9eDisQk'
+BOT_TOKEN = '1233674761:AAHjXGim4mRXy41AdSWlrvqd9mCY4QOCqRc'
 ADMIN_ID = 745211839  # User-provided admin ID
 USER_IDS_FILE = 'user_ids.txt'
 bot = telebot.TeleBot(BOT_TOKEN)
