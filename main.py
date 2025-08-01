@@ -74,22 +74,6 @@ def show_users(message):
     if message.from_user.id != ADMIN_ID:
         bot.reply_to(message, "You are not authorized to use this command.")
         return
-@bot.message_handler(commands=['users'])
-def list_all_users(message):
-    if message.from_user.id != ADMIN_ID:
-        bot.reply_to(message, "❌ You are not authorized to use this command.")
-        return
-
-    user_data = load_user_ids()
-    if not user_data:
-        bot.reply_to(message, "📭 No users have started the bot yet.")
-        return
-
-    response = "📋 *User List:*\n"
-    for uid, name in user_data.items():
-        response += f"\n🆔 `{uid}` — {name}"
-    bot.reply_to(message, response, parse_mode='Markdown')
-
 
     users_info = "Registered Users:\n"
     user_data = load_user_ids()
