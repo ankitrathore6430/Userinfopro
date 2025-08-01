@@ -1,5 +1,20 @@
+
 from flask import Flask
-import threading
+from threading import Thread
+
+app = Flask('')
+
+@app.route('/')
+def home():
+    return "I'm alive!"
+
+def run():
+    app.run(host='0.0.0.0', port=8080)
+
+def keep_alive():
+    t = Thread(target=run)
+    t.start()
+
 
 import telebot
 import os
@@ -7,7 +22,6 @@ import os
 BOT_TOKEN = '7618558615:AAFO5kgrM5ru_Unp-ESwchCerQFE9eDisQk'
 ADMIN_ID = 745211839  # User-provided admin ID
 USER_IDS_FILE = 'user_ids.txt'
-
 bot = telebot.TeleBot(BOT_TOKEN)
 
 def load_user_ids():
@@ -21,7 +35,7 @@ def load_user_ids():
                     user_name = parts[1] if len(parts) > 1 else "N/A"
                     user_data[user_id] = user_name
                 except ValueError:
-                    continue
+                    continue # Skip malformed lines
     return user_data
 
 def save_user_id(user_id, username=None, first_name=None, last_name=None):
@@ -33,11 +47,13 @@ def save_user_id(user_id, username=None, first_name=None, last_name=None):
         display_name = first_name
         if last_name:
             display_name += f" {last_name}"
+    
     user_data[user_id] = display_name
 
     with open(USER_IDS_FILE, 'w') as f:
         for uid, name in user_data.items():
             f.write(f"{uid},{name}\n")
+
 
 @bot.message_handler(commands=['start'])
 def send_welcome(message):
@@ -50,19 +66,52 @@ def send_welcome(message):
         info += f"\n🔗 Username: @{user.username}"
     bot.reply_to(message, info, parse_mode='Markdown')
 
-# Minimal Flask server for uptime checks
-app = Flask(__name__)
+@bot.message_handler(commands=['broadcast'])
+def broadcast_message(message):
+    if message.from_user.id != ADMIN_ID:
+        bot.reply_to(message, "You are not authorized to use this command.")
+        return
 
-@app.route('/')
-def home():
-    return "Bot is running!"
+    text_to_broadcast = message.text.replace("/broadcast", "").strip()
+    if not text_to_broadcast:
+        bot.reply_to(message, "Please provide a message to broadcast.")
+        return
 
-def run_flask():
-    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
+    user_data = load_user_ids()
+    for user_id in user_data.keys():
+        try:
+            if user_id != ADMIN_ID: # Don't send broadcast to admin itself
+                bot.send_message(user_id, text_to_broadcast)
+        except Exception as e:
+            print(f"Could not send message to {user_id}: {e}")
+    bot.reply_to(message, "Broadcast sent to all users.")
 
-def run_bot():
-    bot.infinity_polling()
+@bot.message_handler(commands=['show_users'])
+def show_users(message):
+    if message.from_user.id != ADMIN_ID:
+        bot.reply_to(message, "You are not authorized to use this command.")
+        return
 
-if __name__ == "__main__":
-    threading.Thread(target=run_flask).start()
-    run_bot()
+    users_info = "Registered Users:\n"
+    user_data = load_user_ids()
+    if user_data:
+        for user_id, user_name in user_data.items():
+            users_info += f"- ID: `{user_id}`, Name: {user_name}\n"
+    else:
+        users_info += "No users registered yet."
+    bot.reply_to(message, users_info, parse_mode='Markdown')
+
+@bot.message_handler(func=lambda message: message.text.startswith('@'))
+def get_user_info(message):
+    bot.reply_to(message, "❌ Telegram does not allow bots to access another user's info using @username directly unless they message the bot first.")
+
+@bot.message_handler(func=lambda message: True)
+def fallback(message):
+    bot.reply_to(message, "Send /start to get your own user info.")
+
+bot.infinity_polling()
+
+
+
+
+keep_alive()
