@@ -97,15 +97,11 @@ def show_users(message):
         users_info += "No users registered yet."
     bot.reply_to(message, users_info, parse_mode='Markdown')
 
-# ---- NEW FEATURE: Get user info from a forwarded post ----
 @bot.message_handler(func=lambda message: message.forward_from or message.forward_sender_name)
 def get_forwarded_user_info(message):
     if message.forward_from:
         user = message.forward_from
-        # Save the user's info to the list
         save_user_id(user.id, user.username, user.first_name, user.last_name)
-
-        # Prepare the info message
         info = f"👤 **Forwarded User Info**:\n\n"
         info += f"**ID**: `{user.id}`\n"
         info += f"**First Name**: {user.first_name}\n"
@@ -116,7 +112,6 @@ def get_forwarded_user_info(message):
         info += f"**Is Bot**: {'Yes' if user.is_bot else 'No'}"
         bot.reply_to(message, info, parse_mode='Markdown')
     else:
-        # This handles cases where the user has privacy settings on
         info = "Could not retrieve user details. The original sender has hidden their account due to their privacy settings."
         bot.reply_to(message, info)
 
@@ -126,8 +121,12 @@ def get_user_info(message):
 
 @bot.message_handler(func=lambda message: True)
 def fallback(message):
+    # [cite_start]Save the user's information when they send any message that isn't a specific command [cite: 1]
+    user = message.from_user
+    save_user_id(user.id, user.username, user.first_name, user.last_name)
+    
+    # [cite_start]Reply with the standard guiding message [cite: 1]
     bot.reply_to(message, "Send /start to get your own user info, or forward a message from another user to get their info.")
-
 
 # ---- Flask server for Render + UptimeRobot ----
 app = Flask(__name__)
