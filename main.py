@@ -61,15 +61,28 @@ def broadcast_message(message):
         return
 
     user_data = load_user_ids()
-    for user_id in user_data.keys():
-        try:
-            if user_id != ADMIN_ID:
-                bot.send_message(user_id, text_to_broadcast)
-        except Exception as e:
-            print(f"Could not send message to {user_id}: {e}")
-    bot.reply_to(message, "Broadcast sent to all users.")
+    success_count = 0
+    failed_count = 0
 
-@bot.message_handler(commands=['showusers']) # Command changed from 'show_users'
+    for user_id in user_data.keys():
+        # Do not send the broadcast message to the admin
+        if user_id == ADMIN_ID:
+            continue
+        try:
+            bot.send_message(user_id, text_to_broadcast)
+            success_count += 1
+        except Exception as e:
+            failed_count += 1
+            print(f"Could not send message to {user_id}: {e}")
+            
+    report_message = (
+        f"📢 Broadcast Finished!\n\n"
+        f"✅ Messages Sent: {success_count}\n"
+        f"❌ Failed to Send: {failed_count}"
+    )
+    bot.reply_to(message, report_message)
+
+@bot.message_handler(commands=['showusers'])
 def show_users(message):
     if message.from_user.id != ADMIN_ID:
         bot.reply_to(message, "You are not authorized to use this command.")
